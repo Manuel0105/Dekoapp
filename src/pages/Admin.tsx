@@ -125,11 +125,13 @@ export function Admin() {
                               className="room-input"
                             >
                               <option value="Allgemein">Allgemein</option>
-                              <option value="Kueche">Kueche</option>
+                              <option value="Küche">Küche</option>
                               <option value="Wohnzimmer">Wohnzimmer</option>
                               <option value="Kaffeebar">Kaffeebar</option>
                               <option value="Garten">Garten</option>
                               <option value="WC/Bad">WC/Bad</option>
+                              <option value="Deko">Deko</option>
+                              <option value="Flur">Flur</option>
                             </select>
                           </td>
                           <td>
