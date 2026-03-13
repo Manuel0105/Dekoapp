@@ -40,7 +40,7 @@ CREATE TABLE ratings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id UUID REFERENCES items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-    value INTEGER CHECK (value >= 0 AND value <= 10) NOT NULL,
+    value INTEGER CHECK (value >= 0 AND value <= 15) NOT NULL,
     note TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),

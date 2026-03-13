@@ -197,7 +197,7 @@ export function RatingModal({ item, minTotalItems, onClose, onRatingSubmitted }:
             <div className="rating-selector">
               <p>Wie gut gefällt dir das?</p>
               <div className="stars-container">
-                {[...Array(11)].map((_, i) => (
+                {[...Array(16)].map((_, i) => (
                   <button
                     key={i}
                     type="button"
@@ -205,7 +205,7 @@ export function RatingModal({ item, minTotalItems, onClose, onRatingSubmitted }:
                     onClick={() => setRating(i)}
                     onMouseEnter={() => setHoveredRating(i)}
                     onMouseLeave={() => setHoveredRating(null)}
-                    title={`${i} Sterne`}
+                    title={`${i} Punkte`}
                   >
                     <Star size={24} fill={(rating !== null && rating >= i) || (hoveredRating !== null && hoveredRating >= i) ? "currentColor" : "none"} />
                     <span className="star-number">{i}</span>
@@ -308,7 +308,7 @@ export function RatingModal({ item, minTotalItems, onClose, onRatingSubmitted }:
                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                           <strong>{r.profiles?.display_name || 'WG Mitglied'}</strong>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--warning)' }}>
-                            <Star size={16} fill="currentColor" /> {r.value}/10
+                            <Star size={16} fill="currentColor" /> {r.value}/15
                           </span>
                        </div>
                        {r.note && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>"{r.note}"</p>}
