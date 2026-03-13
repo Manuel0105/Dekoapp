@@ -9,6 +9,7 @@ export interface Profile {
   role: 'user' | 'admin';
   can_edit_status?: boolean;
   can_edit_room?: boolean;
+  can_view_ratings?: boolean;
   created_at?: string;
 }
 

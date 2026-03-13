@@ -12,6 +12,7 @@ CREATE TABLE profiles (
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     can_edit_status BOOLEAN DEFAULT FALSE,
     can_edit_room BOOLEAN DEFAULT FALSE,
+    can_view_ratings BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     last_login_at TIMESTAMPTZ
 );
@@ -123,6 +124,16 @@ CREATE POLICY "Admins can view all ratings"
     ON ratings FOR SELECT 
     TO authenticated 
     USING (public.is_admin());
+
+CREATE POLICY "Authorized users can view all ratings"
+    ON ratings FOR SELECT
+    TO authenticated
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = auth.uid() AND can_view_ratings = true
+      )
+    );
 
 -- Sync Meta Policies
 CREATE POLICY "Admins can manage sync_meta" 

@@ -50,7 +50,7 @@ export function Admin() {
     }
   };
 
-  const handleUpdatePermission = async (id: string, field: 'can_edit_status' | 'can_edit_room', value: boolean) => {
+  const handleUpdatePermission = async (id: string, field: 'can_edit_status' | 'can_edit_room' | 'can_view_ratings', value: boolean) => {
     const { error } = await supabase.from('profiles').update({ [field]: value }).eq('id', id);
     if (!error) {
       setUsers(users.map(u => u.id === id ? { ...u, [field]: value } : u));
@@ -153,6 +153,7 @@ export function Admin() {
                         <th>Rolle</th>
                         <th>Status-Recht</th>
                         <th>Raum-Recht</th>
+                        <th>Sicht-Recht</th>
                         <th>Datum</th>
                       </tr>
                     </thead>
@@ -181,6 +182,15 @@ export function Admin() {
                               onChange={(e) => handleUpdatePermission(user.id, 'can_edit_room', e.target.checked)}
                               disabled={user.role === 'admin'}
                               title={user.role === 'admin' ? "Admins haben dieses Recht automatisch" : "Erlaubt diesem Nutzer den Raum zu ändern"}
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              type="checkbox" 
+                              checked={!!user.can_view_ratings} 
+                              onChange={(e) => handleUpdatePermission(user.id, 'can_view_ratings', e.target.checked)}
+                              disabled={user.role === 'admin'}
+                              title={user.role === 'admin' ? "Admins sehen alles automatisch" : "Erlaubt Nutzer, alle WG-Bewertungen zu sehen"}
                             />
                           </td>
                           <td>{new Date(user.created_at || '').toLocaleDateString('de-DE')}</td>

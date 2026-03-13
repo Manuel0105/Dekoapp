@@ -16,10 +16,12 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
   const isAdmin = profile?.role === 'admin';
   const canEditStatus = isAdmin || profile?.can_edit_status;
   const canEditRoom = isAdmin || profile?.can_edit_room;
+  const canViewRatings = isAdmin || profile?.can_view_ratings;
 
   const [rating, setRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [note, setNote] = useState('');
+  const [allRatings, setAllRatings] = useState<any[]>([]);
   
   const [editedStatus, setEditedStatus] = useState(item.purchase_status || 'geplant');
   const [editedRoom, setEditedRoom] = useState(item.room || '');
@@ -34,16 +36,39 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
     const sourceRef = async () => {
       if (!session) return;
       try {
-        const { data } = await supabase
-          .from('ratings')
-          .select('value, note')
-          .eq('item_id', item.id)
-          .eq('user_id', session.user.id)
-          .single();
+        if (canViewRatings) {
+          const { data, error } = await supabase
+            .from('ratings')
+            .select(`
+              value, 
+              note, 
+              user_id,
+              profiles (display_name)
+            `)
+            .eq('item_id', item.id);
+            
+          if (error) throw error;
           
-        if (data) {
-          setRating(data.value);
-          setNote(data.note || '');
+          if (data) {
+            setAllRatings(data);
+            const myRating = data.find(r => r.user_id === session.user.id);
+            if (myRating) {
+              setRating(myRating.value);
+              setNote(myRating.note || '');
+            }
+          }
+        } else {
+          const { data } = await supabase
+            .from('ratings')
+            .select('value, note')
+            .eq('item_id', item.id)
+            .eq('user_id', session.user.id)
+            .single();
+            
+          if (data) {
+            setRating(data.value);
+            setNote(data.note || '');
+          }
         }
       } catch (err) {
         console.error(err);
@@ -173,6 +198,25 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
                     />
                   </div>
                 )}
+              </div>
+            )}
+
+            {canViewRatings && allRatings.length > 0 && (
+              <div className="all-ratings-section" style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                <h3>Alle Bewertungen</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  {allRatings.map((r, i) => (
+                     <div key={i} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                          <strong>{r.profiles?.display_name || 'WG Mitglied'}</strong>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--warning)' }}>
+                            <Star size={16} fill="currentColor" /> {r.value}/10
+                          </span>
+                       </div>
+                       {r.note && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>"{r.note}"</p>}
+                     </div>
+                  ))}
+                </div>
               </div>
             )}
             
