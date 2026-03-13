@@ -21,9 +21,11 @@ interface ItemCardProps {
   isTopPick?: boolean;
   isVetoed?: boolean;
   rank?: number;
+  userHasRated?: boolean;
+  userHasCommented?: boolean;
 }
 
-export function ItemCard({ item, onClick, isTopPick, isVetoed, rank }: ItemCardProps) {
+export function ItemCard({ item, onClick, isTopPick, isVetoed, rank, userHasRated, userHasCommented }: ItemCardProps) {
   const displayRating = item.average_rating !== null ? Number(item.average_rating).toFixed(1) : '-';
 
   return (
@@ -37,8 +39,13 @@ export function ItemCard({ item, onClick, isTopPick, isVetoed, rank }: ItemCardP
         )}
         
         <div className="card-badges">
-          {item.is_new && <span className="badge badge-new">Neu</span>}
+          {item.is_new && !userHasRated && <span className="badge badge-new">Neu</span>}
           {item.ratings_count === 0 && <span className="badge badge-unrated">Unbewertet</span>}
+          {userHasRated && (
+             <span className="badge badge-rated-personal">
+               {userHasCommented ? 'Schon bewertet & kommentiert' : 'Schon bewertet'}
+             </span>
+          )}
           {item.purchase_status !== 'geplant' && (
              <span className={`badge badge-status-${item.purchase_status}`}>
                {item.purchase_status}

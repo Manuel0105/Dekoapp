@@ -119,6 +119,11 @@
   color: var(--text-secondary);
 }
 
+.badge-rated-personal {
+  background-color: var(--success);
+  color: white;
+}
+
 .badge-status-bestellt {
   background-color: var(--warning);
   color: white;

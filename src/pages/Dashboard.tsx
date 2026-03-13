@@ -11,6 +11,7 @@ export function Dashboard() {
   const { user } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [ratedItemIds, setRatedItemIds] = useState<Set<string>>(new Set());
+  const [commentedItemIds, setCommentedItemIds] = useState<Set<string>>(new Set());
   const [vetoes, setVetoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +35,7 @@ export function Dashboard() {
           
         user ? supabase
           .from('ratings')
-          .select('item_id')
+          .select('item_id, note')
           .eq('user_id', user.id) : null,
           
         supabase
@@ -46,7 +47,8 @@ export function Dashboard() {
       setItems(itemsRes.data || []);
       
       if (ratingsRes && !ratingsRes.error) {
-        setRatedItemIds(new Set(ratingsRes.data.map(r => r.item_id)));
+        setRatedItemIds(new Set(ratingsRes.data.map((r: any) => r.item_id)));
+        setCommentedItemIds(new Set(ratingsRes.data.filter((r: any) => r.note && r.note.trim() !== '').map((r: any) => r.item_id)));
       }
       
       if (vetoesRes && !vetoesRes.error) {
@@ -204,6 +206,8 @@ export function Dashboard() {
                 onClick={setSelectedItem} 
                 isVetoed={vetoedItemIds.has(item.id)}
                 rank={index + 1}
+                userHasRated={ratedItemIds.has(item.id)}
+                userHasCommented={commentedItemIds.has(item.id)}
               />
             ))}
           </div>
@@ -224,6 +228,8 @@ export function Dashboard() {
                 item={item} 
                 onClick={setSelectedItem} 
                 isVetoed={true}
+                userHasRated={ratedItemIds.has(item.id)}
+                userHasCommented={commentedItemIds.has(item.id)}
               />
             ))}
           </div>
@@ -274,6 +280,8 @@ export function Dashboard() {
                   onClick={setSelectedItem}
                   isVetoed={vetoedItemIds.has(item.id)}
                   rank={rank}
+                  userHasRated={ratedItemIds.has(item.id)}
+                  userHasCommented={commentedItemIds.has(item.id)}
                 />
               );
             })}
