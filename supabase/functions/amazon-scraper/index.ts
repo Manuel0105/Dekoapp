@@ -39,8 +39,8 @@ serve(async (req) => {
     const items: any[] = [];
 
     // Amazon Wishlist DOM Parsing (This can be fragile depending on Amazon's A/B tests)
-    // Looking for grid-items or list-items
-    $('.g-item-sortable').each((_i, el) => {
+    // 1. Parse standard visible items
+    const parseItem = (_i: number, el: any, $: any) => {
       const element = $(el);
       
       const idStr = element.attr('data-itemid') || '';
@@ -78,7 +78,7 @@ serve(async (req) => {
       const asinMatch = productUrl ? productUrl.match(/\/dp\/([A-Z0-9]{10})/) : null;
       const external_id = asinMatch ? asinMatch[1] : `WL-${idStr}`;
 
-      if (title) {
+      if (title && !items.find((i) => i.external_id === external_id)) {
         items.push({
           external_id,
           title,
@@ -90,7 +90,37 @@ serve(async (req) => {
           purchase_status: 'geplant'
         });
       }
-    });
+    };
+
+    $('.g-item-sortable').each((_i, el) => parseItem(_i, el, $));
+
+    // 2. Parse lazy-loaded items hidden in script tags (Amazon loads the rest of the list this way)
+    const scriptTags = $('script').toArray();
+    for (const script of scriptTags) {
+      const scriptContent = $(script).html();
+      if (scriptContent && scriptContent.includes('input.items')) {
+        try {
+          // Amazon often embeds remaining items in an array of objects inside a script tag
+          // Extract the JSON-like array. This requires some regex kung-fu.
+          const match = scriptContent.match(/"items":\s*(\[.*?\])/);
+          if (match && match[1]) {
+             // We won't try to parse the entire weird JSON string, instead let's just 
+             // extract ASINs and titles from the raw string if possible, or look for encoded HTML
+             const escapedHtmlMatches = scriptContent.match(/<li.*?g-item-sortable.*?(?:<\/li>|(?=<li))/g);
+             if (escapedHtmlMatches) {
+                 for (const matchStr of escapedHtmlMatches) {
+                     // unescape common json escapes
+                     let cleanHtml = matchStr.replace(/\\"/g, '"').replace(/\\n/g, '').replace(/\\\/`/g, '/');
+                     const $lazy = cheerio.load(cleanHtml);
+                     $lazy('.g-item-sortable').each((_i, el) => parseItem(_i, el, $lazy));
+                 }
+             }
+          }
+        } catch (e) {
+          console.log("Error parsing lazy scripts", e);
+        }
+      }
+    }
 
     console.log(`Parsed ${items.length} items from wishlist.`);
 
