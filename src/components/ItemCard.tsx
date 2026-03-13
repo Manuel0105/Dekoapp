@@ -19,13 +19,16 @@ interface ItemCardProps {
   item: Item;
   onClick: (item: Item) => void;
   isTopPick?: boolean;
+  isVetoed?: boolean;
+  rank?: number;
 }
 
-export function ItemCard({ item, onClick, isTopPick }: ItemCardProps) {
+export function ItemCard({ item, onClick, isTopPick, isVetoed, rank }: ItemCardProps) {
   const displayRating = item.average_rating !== null ? Number(item.average_rating).toFixed(1) : '-';
 
   return (
-    <div className={`item-card ${isTopPick ? 'top-pick' : ''}`} onClick={() => onClick(item)}>
+    <div className={`item-card ${isTopPick ? 'top-pick' : ''} ${isVetoed ? 'vetoed' : ''}`} onClick={() => onClick(item)}>
+      {rank && <div className="card-rank-badge">#{rank}</div>}
       <div className="card-image-wrapper">
         {item.image_url ? (
           <img src={item.image_url} alt={item.title} className="card-image" loading="lazy" />

@@ -47,6 +47,15 @@ CREATE TABLE ratings (
     UNIQUE(item_id, user_id) -- One rating per user per item
 );
 
+-- Vetoes: user vetoes on items ("Auf gar keinen Fall")
+CREATE TABLE vetoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID REFERENCES items(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(item_id, user_id)
+);
+
 -- Sync Meta: tracking sync status
 CREATE TABLE sync_meta (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,6 +70,7 @@ CREATE TABLE sync_meta (
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vetoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sync_meta ENABLE ROW LEVEL SECURITY;
 
 -- Create a secure function to check admin status bypassing RLS
@@ -134,6 +144,27 @@ CREATE POLICY "Authorized users can view all ratings"
         WHERE id = auth.uid() AND can_view_ratings = true
       )
     );
+
+-- Vetoes Policies
+CREATE POLICY "Users can insert own vetoes" 
+    ON vetoes FOR INSERT 
+    TO authenticated 
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own vetoes" 
+    ON vetoes FOR DELETE 
+    TO authenticated 
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Anyone can view vetoes" 
+    ON vetoes FOR SELECT 
+    TO authenticated 
+    USING (true);
+
+CREATE POLICY "Admins can manage vetoes" 
+    ON vetoes FOR ALL 
+    TO authenticated 
+    USING (public.is_admin());
 
 -- Sync Meta Policies
 CREATE POLICY "Admins can manage sync_meta" 

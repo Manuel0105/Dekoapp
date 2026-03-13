@@ -11,6 +11,7 @@ export function Dashboard() {
   const { user } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [ratedItemIds, setRatedItemIds] = useState<Set<string>>(new Set());
+  const [vetoes, setVetoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<string>('Alle');
@@ -21,7 +22,7 @@ export function Dashboard() {
 
   const fetchItems = async () => {
     try {
-      const [itemsRes, ratingsRes] = await Promise.all([
+      const [itemsRes, ratingsRes, vetoesRes] = await Promise.all([
         supabase
           .from('items')
           .select('*')
@@ -34,7 +35,11 @@ export function Dashboard() {
         user ? supabase
           .from('ratings')
           .select('item_id')
-          .eq('user_id', user.id) : null
+          .eq('user_id', user.id) : null,
+          
+        supabase
+          .from('vetoes')
+          .select('*')
       ]);
         
       if (itemsRes.error) throw itemsRes.error;
@@ -42,6 +47,10 @@ export function Dashboard() {
       
       if (ratingsRes && !ratingsRes.error) {
         setRatedItemIds(new Set(ratingsRes.data.map(r => r.item_id)));
+      }
+      
+      if (vetoesRes && !vetoesRes.error) {
+        setVetoes(vetoesRes.data || []);
       }
     } catch (err) {
       console.error('Error fetching items:', err);
@@ -67,7 +76,11 @@ export function Dashboard() {
     });
   }, [items, selectedRoom, searchQuery]);
 
-  const topItems = items.filter(i => i.average_rating !== null).slice(0, 5);
+  const vetoedItemIds = useMemo(() => new Set(vetoes.map(v => v.item_id)), [vetoes]);
+  const vetoedItems = items.filter(i => vetoedItemIds.has(i.id));
+
+  // The ratedItems represent all items that have at least one rating (sorted by our API order)
+  const ratedItems = items.filter(i => i.average_rating !== null);
   const unratedItems = items.filter(i => !ratedItemIds.has(i.id));
 
   if (loading) {
@@ -176,19 +189,41 @@ export function Dashboard() {
         </div>
       )}
 
-      {searchQuery === '' && selectedRoom === 'Alle' && topItems.length > 0 && (
+      {searchQuery === '' && selectedRoom === 'Alle' && ratedItems.length > 0 && (
         <section className="dashboard-section highlight-section">
           <div className="section-title">
             <Award className="section-icon text-warning" size={24} />
-            <h2>Top Picks</h2>
+            <h2>Alle bewerteten Gegenstände</h2>
+            <span className="badge">{ratedItems.length}</span>
           </div>
-          <div className="items-grid top-picks-grid">
-            {topItems.map((item, index) => (
+          <div className="horizontal-scroll-container">
+            {ratedItems.map((item, index) => (
               <ItemCard 
                 key={item.id} 
                 item={item} 
                 onClick={setSelectedItem} 
-                isTopPick={index === 0}
+                isVetoed={vetoedItemIds.has(item.id)}
+                rank={index + 1}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {searchQuery === '' && selectedRoom === 'Alle' && vetoedItems.length > 0 && (
+        <section className="dashboard-section highlight-section" style={{ borderColor: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+          <div className="section-title">
+            <span style={{ fontSize: '1.5rem' }}>🛑</span>
+            <h2 style={{ color: 'var(--danger)' }}>Auf gar keinen Fall</h2>
+            <span className="badge badge-status-verworfen">{vetoedItems.length}</span>
+          </div>
+          <div className="horizontal-scroll-container">
+            {vetoedItems.map((item) => (
+              <ItemCard 
+                key={`veto-${item.id}`} 
+                item={item} 
+                onClick={setSelectedItem} 
+                isVetoed={true}
               />
             ))}
           </div>
@@ -204,7 +239,12 @@ export function Dashboard() {
           </div>
           <div className="items-grid new-items-grid">
             {unratedItems.map(item => (
-              <ItemCard key={`unrated-${item.id}`} item={item} onClick={setSelectedItem} />
+              <ItemCard 
+                key={`unrated-${item.id}`} 
+                item={item} 
+                onClick={setSelectedItem} 
+                isVetoed={vetoedItemIds.has(item.id)}
+              />
             ))}
           </div>
         </section>
@@ -224,14 +264,19 @@ export function Dashboard() {
           </div>
         ) : (
           <div className="items-grid all-items-grid">
-            {filteredItems.map((item, index) => (
-              <ItemCard 
-                key={item.id} 
-                item={item} 
-                onClick={setSelectedItem}
-                isTopPick={index === 0 && searchQuery === '' && selectedRoom === 'Alle' && items.length > 0 && item.id === items[0].id}
-              />
-            ))}
+            {filteredItems.map((item) => {
+              const rankIdx = ratedItems.findIndex(r => r.id === item.id);
+              const rank = rankIdx >= 0 ? rankIdx + 1 : undefined;
+              return (
+                <ItemCard 
+                  key={item.id} 
+                  item={item} 
+                  onClick={setSelectedItem}
+                  isVetoed={vetoedItemIds.has(item.id)}
+                  rank={rank}
+                />
+              );
+            })}
           </div>
         )}
       </section>
@@ -239,6 +284,7 @@ export function Dashboard() {
       {selectedItem && (
         <RatingModal 
           item={selectedItem} 
+          minTotalItems={items.length}
           onClose={() => setSelectedItem(null)} 
           onRatingSubmitted={() => {
             fetchItems();

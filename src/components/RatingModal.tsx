@@ -7,11 +7,12 @@ import './RatingModal.css';
 
 interface RatingModalProps {
   item: Item;
+  minTotalItems: number;
   onClose: () => void;
   onRatingSubmitted: () => void;
 }
 
-export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalProps) {
+export function RatingModal({ item, minTotalItems, onClose, onRatingSubmitted }: RatingModalProps) {
   const { session, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
   const canEditStatus = isAdmin || profile?.can_edit_status;
@@ -22,6 +23,10 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [allRatings, setAllRatings] = useState<any[]>([]);
+  
+  const [allVetoes, setAllVetoes] = useState<any[]>([]);
+  const [totalUserVetoes, setTotalUserVetoes] = useState<number>(0);
+  const [myVeto, setMyVeto] = useState<boolean>(false);
   
   const [editedStatus, setEditedStatus] = useState(item.purchase_status || 'geplant');
   const [editedRoom, setEditedRoom] = useState(item.room || '');
@@ -37,25 +42,40 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
       if (!session) return;
       try {
         if (canViewRatings) {
-          const { data, error } = await supabase
-            .from('ratings')
-            .select(`
-              value, 
-              note, 
-              user_id,
-              profiles (display_name)
-            `)
-            .eq('item_id', item.id);
+          const [ratingsRes, vetoesRes, userVetoesRes] = await Promise.all([
+             supabase
+              .from('ratings')
+              .select(`value, note, user_id, profiles (display_name)`)
+              .eq('item_id', item.id),
+              
+             supabase
+              .from('vetoes')
+              .select(`user_id, profiles (display_name)`)
+              .eq('item_id', item.id),
+              
+             supabase
+              .from('vetoes')
+              .select('id', { count: 'exact' })
+              .eq('user_id', session.user.id)
+          ]);
             
-          if (error) throw error;
+          if (ratingsRes.error) throw ratingsRes.error;
           
-          if (data) {
-            setAllRatings(data);
-            const myRating = data.find(r => r.user_id === session.user.id);
+          if (ratingsRes.data) {
+            setAllRatings(ratingsRes.data);
+            const myRating = ratingsRes.data.find(r => r.user_id === session.user.id);
             if (myRating) {
               setRating(myRating.value);
               setNote(myRating.note || '');
             }
+          }
+          
+          if (vetoesRes.data) {
+             setAllVetoes(vetoesRes.data);
+             setMyVeto(vetoesRes.data.some((v: any) => v.user_id === session.user.id));
+          }
+          if (userVetoesRes.count !== null) {
+              setTotalUserVetoes(userVetoesRes.count);
           }
         } else {
           const { data } = await supabase
@@ -119,6 +139,45 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
     }
   };
 
+  const handleToggleVeto = async () => {
+      if (!session) return;
+      if (loading) return;
+      
+      const maxAllowed = Math.ceil(minTotalItems * 0.03);
+      if (!myVeto && totalUserVetoes >= maxAllowed) {
+          alert(`Du hast dein Maximum von ${maxAllowed} Vetos bereits aufgebraucht!`);
+          return;
+      }
+      
+      setLoading(true);
+      try {
+          if (myVeto) {
+             const { error } = await supabase.from('vetoes')
+                 .delete()
+                 .match({ item_id: item.id, user_id: session.user.id });
+             if (error) throw error;
+             setMyVeto(false);
+             setTotalUserVetoes(prev => prev - 1);
+          } else {
+             const { error } = await supabase.from('vetoes')
+                 .insert({ item_id: item.id, user_id: session.user.id });
+             if (error) throw error;
+             setMyVeto(true);
+             setTotalUserVetoes(prev => prev + 1);
+          }
+          onRatingSubmitted();
+          onClose();
+      } catch (err) {
+          console.error(err);
+          alert('Fehler beim Veto speichern');
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const maxVetoesAllowed = Math.ceil(minTotalItems * 0.03);
+  const remainingVetoes = Math.max(0, maxVetoesAllowed - totalUserVetoes);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -166,6 +225,30 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
               />
             </div>
             
+            <div style={{ margin: '1rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239, 68, 68, 0.05)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)' }}>
+                <div>
+                   <h4 style={{ margin: 0, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      🛑 Auf gar keinen Fall!
+                   </h4>
+                   <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      Veto-Kontingent: {remainingVetoes} von {maxVetoesAllowed} übrig
+                   </p>
+                </div>
+                <button 
+                  type="button" 
+                  className={`btn-primary ${myVeto ? '' : 'btn-outline'}`}
+                  style={{ 
+                      borderColor: 'var(--danger)', 
+                      backgroundColor: myVeto ? 'var(--danger)' : 'transparent',
+                      color: myVeto ? 'white' : 'var(--danger)'
+                  }}
+                  onClick={handleToggleVeto}
+                  disabled={loading || (!myVeto && remainingVetoes <= 0)}
+                >
+                  {myVeto ? 'Veto zurücknehmen' : 'Veto einlegen'}
+                </button>
+            </div>
+            
             {(canEditStatus || canEditRoom) && (
               <div className="admin-edit-group" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
                 {canEditStatus && (
@@ -206,10 +289,18 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
               </div>
             )}
 
-            {canViewRatings && allRatings.length > 0 && (
+            {canViewRatings && (allRatings.length > 0 || allVetoes.length > 0) && (
               <div className="all-ratings-section" style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-                <h3>Alle Bewertungen</h3>
+                <h3>Alle Bewertungen & Vetoes</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  {allVetoes.map((v, i) => (
+                      <div key={`veto-${i}`} style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--danger)' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <strong>{v.profiles?.display_name || 'WG Mitglied'}</strong>
+                            <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>hat Veto eingelegt 🛑</span>
+                         </div>
+                      </div>
+                  ))}
                   {allRatings.map((r, i) => (
                      <div key={i} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>

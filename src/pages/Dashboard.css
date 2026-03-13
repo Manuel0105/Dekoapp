@@ -17,6 +17,7 @@
   margin-bottom: 0.5rem;
   background: linear-gradient(90deg, var(--accent-hover), var(--accent-primary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -120,8 +121,32 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
-.top-picks-grid {
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+.horizontal-scroll-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.horizontal-scroll-container > * {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
 }
 
 .new-items-grid {
