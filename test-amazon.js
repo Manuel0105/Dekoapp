@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 const url = "https://www.amazon.de/hz/wishlist/ls/2XS8E12UVZDNI?ref_=wl_share";
 

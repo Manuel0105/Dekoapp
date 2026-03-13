@@ -43,8 +43,7 @@ serve(async (req) => {
     const parseItem = (_i: number, el: any, $: any) => {
       const element = $(el);
       
-      const idStr = element.attr('data-itemid') || '';
-      if (!idStr) return; // Not a valid item
+      const idStr = element.attr('data-itemid') || element.attr('data-id') || element.attr('data-reposition-action-params') || `fallback-${_i}-${Date.now()}`;
       
       const title = element.find('a.a-link-normal[title]').attr('title') || 
                     element.find('.g-title a').text().trim();
