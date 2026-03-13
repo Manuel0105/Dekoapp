@@ -1,0 +1,198 @@
+.item-card {
+  background-color: var(--bg-secondary);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
+}
+
+.item-card.top-pick {
+  border: 2px solid var(--warning);
+  box-shadow: 0 4px 15px -3px rgba(245, 158, 11, 0.3);
+}
+
+.card-image-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* 1:1 Aspect Ratio */
+  background-color: var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.item-card:hover .card-image {
+  transform: scale(1.05);
+}
+
+.card-image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+.card-badges {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-new {
+  background-color: var(--accent-primary);
+  color: white;
+}
+
+.badge-unrated {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.badge-status-bestellt {
+  background-color: var(--warning);
+  color: white;
+}
+
+.badge-status-gekauft {
+  background-color: var(--success);
+  color: white;
+}
+
+.badge-status-verworfen {
+  background-color: var(--danger);
+  color: white;
+}
+
+.card-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.card-room {
+  background-color: var(--bg-tertiary);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.card-price {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  flex: 1;
+  /* line clamping */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rating-icon {
+  color: var(--border-color);
+}
+
+.rating-icon.filled {
+  color: var(--warning);
+  fill: var(--warning);
+}
+
+.rating-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.rating-count {
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+}
+
+.card-link {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.card-link:hover {
+  color: var(--accent-primary);
+}
+
+.card-link:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

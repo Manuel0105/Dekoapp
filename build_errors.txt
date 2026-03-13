@@ -1,0 +1,16 @@
+﻿
+> dekoapp@0.0.0 build
+> tsc -b && vite build
+
+src/components/ItemCard.tsx(1,16): error TS6133: 'MessageCircle' is declared but its value is never read.
+src/components/ItemCard.tsx(1,45): error TS6133: 'Calendar' is declared but its value is never read.
+src/components/ItemCard.tsx(1,55): error TS6133: 'PlusCircle' is declared but its value is never read.
+src/components/RatingModal.tsx(3,10): error TS1484: 'Item' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/RatingModal.tsx(27,23): error TS6133: 'error' is declared but its value is never read.
+src/contexts/AuthContext.tsx(2,10): error TS1484: 'Session' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/contexts/AuthContext.tsx(2,19): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/Admin.tsx(3,19): error TS1484: 'Profile' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/Admin.tsx(5,17): error TS6133: 'Settings' is declared but its value is never read.
+src/pages/Admin.tsx(7,10): error TS1484: 'Item' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/Admin.tsx(156,46): error TS2339: Property 'created_at' does not exist on type 'Profile'.
+src/pages/Dashboard.tsx(3,10): error TS1484: 'Item' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
