@@ -18,6 +18,8 @@
   border-radius: var(--border-radius-lg);
   width: 100%;
   max-width: 500px;
+  max-height: 90vh; /* Make the modal scrollable if content overflows */
+  overflow-y: auto;
   position: relative;
   box-shadow: var(--shadow-lg);
   display: flex;

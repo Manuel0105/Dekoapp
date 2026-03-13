@@ -135,7 +135,20 @@ export function Dashboard() {
                 const { data, error } = await supabase.functions.invoke('amazon-scraper', {
                   body: { wishlistUrl: importUrl }
                 });
-                if (error) throw error;
+                
+                if (error) {
+                    let errMsg = error.message;
+                    if (error.context && typeof error.context.json === 'function') {
+                        try {
+                            const errData = await error.context.json();
+                            if (errData && errData.error) {
+                                errMsg = errData.error;
+                            }
+                        } catch (e) {}
+                    }
+                    throw new Error(errMsg);
+                }
+                
                 alert(data?.message || 'Erfolgreich importiert!');
                 setImportUrl('');
                 setShowImport(false);

@@ -188,14 +188,19 @@ export function RatingModal({ item, onClose, onRatingSubmitted }: RatingModalPro
                 {canEditRoom && (
                   <div className="input-group" style={{ margin: 0, flex: 1 }}>
                     <label htmlFor="edit-room">Raum</label>
-                    <input 
-                      type="text" 
+                    <select 
                       id="edit-room"
                       value={editedRoom} 
                       onChange={e => setEditedRoom(e.target.value)}
-                      placeholder="z.B. Wohnzimmer"
                       style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                    />
+                    >
+                      <option value="Allgemein">Allgemein</option>
+                      <option value="Kueche">Kueche</option>
+                      <option value="Wohnzimmer">Wohnzimmer</option>
+                      <option value="Kaffeebar">Kaffeebar</option>
+                      <option value="Garten">Garten</option>
+                      <option value="WC/Bad">WC/Bad</option>
+                    </select>
                   </div>
                 )}
               </div>

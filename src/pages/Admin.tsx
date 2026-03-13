@@ -119,12 +119,18 @@ export function Admin() {
                         <tr key={item.id}>
                           <td className="item-title-cell">{item.title}</td>
                           <td>
-                            <input 
-                              type="text" 
+                            <select 
                               value={item.room || 'Allgemein'}
                               onChange={(e) => handleUpdateRoom(item.id, e.target.value)}
                               className="room-input"
-                            />
+                            >
+                              <option value="Allgemein">Allgemein</option>
+                              <option value="Kueche">Kueche</option>
+                              <option value="Wohnzimmer">Wohnzimmer</option>
+                              <option value="Kaffeebar">Kaffeebar</option>
+                              <option value="Garten">Garten</option>
+                              <option value="WC/Bad">WC/Bad</option>
+                            </select>
                           </td>
                           <td>
                             <span className={`status-badge ${item.is_new ? 'new' : ''}`}>

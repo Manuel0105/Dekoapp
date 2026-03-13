@@ -25,13 +25,23 @@ serve(async (req) => {
     // Fetch the Amazon Wishlist using a fake user agent to bypass simple blocks
     const response = await fetch(wishlistUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
       }
     });
 
     if (!response.ok) {
-      throw new Error(`Fehler beim Abrufen der Liste (Status: ${response.status})`);
+      throw new Error(`Amazon hat die Anfrage blockiert (Status: ${response.status}). Bitte versuche es in ein paar Minuten erneut.`);
     }
 
     const html = await response.text();
@@ -91,34 +101,17 @@ serve(async (req) => {
       }
     };
 
-    $('.g-item-sortable').each((_i, el) => parseItem(_i, el, $));
-
-    // 2. Parse lazy-loaded items hidden in script tags (Amazon loads the rest of the list this way)
-    const scriptTags = $('script').toArray();
-    for (const script of scriptTags) {
-      const scriptContent = $(script).html();
-      if (scriptContent && scriptContent.includes('input.items')) {
-        try {
-          // Amazon often embeds remaining items in an array of objects inside a script tag
-          // Extract the JSON-like array. This requires some regex kung-fu.
-          const match = scriptContent.match(/"items":\s*(\[.*?\])/);
-          if (match && match[1]) {
-             // We won't try to parse the entire weird JSON string, instead let's just 
-             // extract ASINs and titles from the raw string if possible, or look for encoded HTML
-             const escapedHtmlMatches = scriptContent.match(/<li.*?g-item-sortable.*?(?:<\/li>|(?=<li))/g);
-             if (escapedHtmlMatches) {
-                 for (const matchStr of escapedHtmlMatches) {
-                     // unescape common json escapes
-                     let cleanHtml = matchStr.replace(/\\"/g, '"').replace(/\\n/g, '').replace(/\\\/`/g, '/');
-                     const $lazy = cheerio.load(cleanHtml);
-                     $lazy('.g-item-sortable').each((_i, el) => parseItem(_i, el, $lazy));
-                 }
-             }
-          }
-        } catch (e) {
-          console.log("Error parsing lazy scripts", e);
+    // Universal Regex parsing over the entire raw HTML byte stream.
+    // This securely bypasses any Amazon attempts to hide the elements inside <noscript> 
+    // or stringified JSON payload inside <script> tags.
+    const itemChunks = html.match(/<li[\s\S]*?g-item-sortable[\s\S]*?(?:<\/li>|(?=<li))/g);
+    if (itemChunks) {
+        for (const chunk of itemChunks) {
+            // Clean common JSON escapes if this chunk was embedded inside a script payload
+            let cleanHtml = chunk.replace(/\\"/g, '"').replace(/\\n/g, '').replace(/\\\/`/g, '/');
+            const $chunk = cheerio.load(cleanHtml);
+            $chunk('.g-item-sortable').each((_i, el) => parseItem(_i, el, $chunk));
         }
-      }
     }
 
     console.log(`Parsed ${items.length} items from wishlist.`);
